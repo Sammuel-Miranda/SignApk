@@ -13,6 +13,7 @@ Verifing the code, the main windows would have a list of files (that were suppos
 
 So the code to make the APK sign execution would be:
 
+``` C#
     string apk = "C:\\Users\\User\\Desktop\\APK\\original.apk";
     string extractedDir = "C:\\Users\\User\\Desktop\\APK\\extracted\\";
     //it would be from a list from a config.txt file, but as default has only that
@@ -23,3 +24,4 @@ So the code to make the APK sign execution would be:
     string key = "C:\\Users\\User\\Desktop\\APK\\key.p12";
     string outputApk = "C:\\Users\\User\\Desktop\\APK\\signed.apk";
     int zipFileCount = ApkTool.ZipAndSign(apk, extractedDir, files, outputApk, key);
+```
