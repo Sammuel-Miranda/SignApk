@@ -73,17 +73,17 @@ namespace Libs.SignApk
 
         public static bool TryCreateDirectory(string file)
         {
-            string dir = Sys.IO.Path.GetDirectoryName(file);
-            if (!Sys.IO.Directory.Exists(dir))
+            try
             {
-                Sys.IO.Directory.CreateDirectory(dir);
+                string dir = Sys.IO.Path.GetDirectoryName(file);
+                if (!Sys.IO.Directory.Exists(dir)) { Sys.IO.Directory.CreateDirectory(dir); }
                 return true;
-            } else { return false; }
+            } catch { return false; }
         }
 
         public static void CopyTo(Sys.IO.Stream input, Sys.IO.Stream output) //pre .Net 4 this function does not exists, so made as in: https://referencesource.microsoft.com/#mscorlib/system/io/stream.cs,98ac7cf3acb04bb1
         {
-            if (output != null || !output.CanWrite || input == null || !input.CanRead) { throw new Sys.IO.IOException(); }
+            if (output == null || !output.CanWrite || input == null || !input.CanRead) { throw new Sys.IO.IOException(); }
             else
             {
                 byte[] buffer = new byte[LibAPK.Common.DefaultBufferSize];
@@ -92,8 +92,8 @@ namespace Libs.SignApk
             }
         }
 
-        public static void TryCopy(string source, string output) { if (LibAPK.Common.TryCreateDirectory(output) || !Sys.IO.File.Exists(source)) { using (Sys.IO.Stream outputF = Sys.IO.File.Create(output, 4096, Sys.IO.FileOptions.SequentialScan)) { using (Sys.IO.FileStream sourceF = new Sys.IO.FileStream(source, Sys.IO.FileMode.Open, Sys.IO.FileAccess.Read, Sys.IO.FileShare.Read, 4096, Sys.IO.FileOptions.SequentialScan)) { LibAPK.Common.CopyTo(sourceF, outputF); } } } }
         public static Sys.IO.Stream CreateFile(string file) { if (LibAPK.Common.TryCreateDirectory(file)) { return new Sys.IO.FileStream(file, Sys.IO.FileMode.OpenOrCreate, Sys.IO.FileAccess.Write, Sys.IO.FileShare.None, 4096, Sys.IO.FileOptions.SequentialScan); } else { return null; } }
+        public static void TryCopy(string source, string output) { if (LibAPK.Common.TryCreateDirectory(output)) { if (!Sys.IO.File.Exists(output)) { using (Sys.IO.Stream outputF = Sys.IO.File.Create(output, 4096, Sys.IO.FileOptions.SequentialScan)) { using (Sys.IO.FileStream sourceF = new Sys.IO.FileStream(source, Sys.IO.FileMode.Open, Sys.IO.FileAccess.Read, Sys.IO.FileShare.Read, 4096, Sys.IO.FileOptions.SequentialScan)) { LibAPK.Common.CopyTo(sourceF, outputF); } } } } }
     }
 
     public static class ApkTool
@@ -102,7 +102,7 @@ namespace Libs.SignApk
 
         private static string ComputeSha1Base64ForSF(SysCry.HashAlgorithm sha1, SysTxt.StringBuilder buffer, string key, string value)
         {
-            buffer.Capacity = 0;
+            buffer.Length = 0;
             buffer.Append("Name: ").Append(key).Append("\r\n").Append("SHA1-Digest: ").Append(value).Append("\r\n").Append("\r\n");
             byte[] hashValue = sha1.ComputeHash(SysTxt.Encoding.UTF8.GetBytes(buffer.ToString()));
             return Sys.Convert.ToBase64String(hashValue);
@@ -190,12 +190,12 @@ namespace Libs.SignApk
             return sfStream.ToArray();
         }
 
-        public static byte[] GetRSAData(LibZIP.ZipFile zip, byte[] sfData, string rsaName, string keyFile)
+        public static byte[] GetRSAData(LibZIP.ZipFile zip, byte[] sfData, string rsaName, string keyFile, string password = null)
         {
             if (!Sys.IO.File.Exists(keyFile)) { throw new SysCry.CryptographicUnexpectedOperationException(); }
             else
             {
-                SysCry.X509Certificates.X509Certificate2 certificate = new SysCry.X509Certificates.X509Certificate2(keyFile);
+                SysCry.X509Certificates.X509Certificate2 certificate = new SysCry.X509Certificates.X509Certificate2(keyFile, password);
                 SysCry.Pkcs.SignedCms signedCms = new SysCry.Pkcs.SignedCms(new SysCry.Pkcs.ContentInfo(sfData), true);
                 signedCms.ComputeSignature(new SysCry.Pkcs.CmsSigner(SysCry.Pkcs.SubjectIdentifierType.IssuerAndSerialNumber, certificate));
                 return signedCms.Encode();
@@ -259,7 +259,7 @@ namespace Libs.SignApk
             }
         }
 
-        private static void Sign(string apkFile, string inputDir, SysClG.IEnumerable<string> files, string keyFile)
+        private static void Sign(string apkFile, string inputDir, SysClG.IEnumerable<string> files, string keyFile, string password = null)
         {
             inputDir = LibAPK.Common.StandardDirectory(inputDir);
             using (LibZIP.ZipFile zip = new LibZIP.ZipFile(new Sys.IO.FileStream(apkFile, Sys.IO.FileMode.Open, Sys.IO.FileAccess.ReadWrite, Sys.IO.FileShare.ReadWrite)))
@@ -270,7 +270,7 @@ namespace Libs.SignApk
                 byte[] manifestData = null;
                 LibAPK.Manifest manifest = LibAPK.ApkTool.GetManifest(zip, inputDir, files, out manifestData);
                 sfData = LibAPK.ApkTool.GetSFData(zip, inputDir, files, manifest, manifestData, sfName);
-                rsaData = LibAPK.ApkTool.GetRSAData(zip, sfData, sfName, keyFile);
+                rsaData = LibAPK.ApkTool.GetRSAData(zip, sfData, sfName, keyFile, password: password);
                 zip.BeginUpdate();
                 zip.Add(new LibAPK.StaticDataSource(manifestData), "META-INF/MANIFEST.MF");
                 zip.Add(new LibAPK.StaticDataSource(sfData), "META-INF/" + sfName + ".SF");
@@ -303,11 +303,12 @@ namespace Libs.SignApk
             }
         }
 
-        public static int ZipAndSign(string sourceApkFile, string inputDir, SysClG.IEnumerable<string> files, string outputFile, string keyFile)
+        public static int ZipAndSign(string sourceApkFile, string inputDir, SysClG.IEnumerable<string> files, string outputFile, string keyFile, string password = null)
         {
             inputDir = LibAPK.Common.StandardDirectory(inputDir);
             bool copy = false;
             int count = 0;
+            foreach (string file in files) { count++; }
             if (Sys.IO.File.Exists(outputFile)) { using (LibZIP.ZipFile zip = new LibZIP.ZipFile(Sys.IO.File.OpenRead(outputFile))) { files = LibAPK.ApkTool.GetUpdateFilesForZip(zip, inputDir, files, out count); } }
             using (LibZIP.ZipFile zip = new LibZIP.ZipFile(Sys.IO.File.OpenRead(sourceApkFile)))
             {
@@ -330,10 +331,10 @@ namespace Libs.SignApk
                     LibAPK.Common.TryCopy(sourceApkFile, outputFile);
                     using (LibZIP.ZipFile zip = new LibZIP.ZipFile(Sys.IO.File.Open(outputFile, Sys.IO.FileMode.Open, Sys.IO.FileAccess.Read, Sys.IO.FileShare.Read)))
                     {
-                        sfName = LibAPK.ApkTool.FindSFName(zip) ?? "SAAR";
+                        sfName = LibAPK.ApkTool.FindSFName(zip) ?? "CERT";
                         LibAPK.Manifest manifest = LibAPK.ApkTool.GetManifest(zip, inputDir, files, out manifestData);
                         sfData = LibAPK.ApkTool.GetSFData(zip, inputDir, files, manifest, manifestData, sfName);
-                        rsaData = LibAPK.ApkTool.GetRSAData(zip, sfData, sfName, keyFile);
+                        rsaData = LibAPK.ApkTool.GetRSAData(zip, sfData, sfName, keyFile, password: password);
                     }
                     using (LibZIP.ZipFile zip = new LibZIP.ZipFile(Sys.IO.File.Open(outputFile, Sys.IO.FileMode.Open, Sys.IO.FileAccess.ReadWrite, Sys.IO.FileShare.None)))
                     {
@@ -355,7 +356,7 @@ namespace Libs.SignApk
             else
             {
                 LibAPK.ApkTool.ZipCopyToZip(sourceApkFile, inputDir, files, outputFile);
-                LibAPK.ApkTool.Sign(outputFile, inputDir, files, keyFile);
+                LibAPK.ApkTool.Sign(outputFile, inputDir, files, keyFile, password: password);
             }
             return count;
         }
@@ -366,8 +367,18 @@ internal static class Program
 {
     internal static int Main(string[] args) //https://github.com/ibukisaar/SignApk/blob/master/SignApk.Sample/MainWindow.xaml.cs
     {
-	//todo
-        return 0;
+        string apk = "C:\\User\\Desktop\\APK\\original.apk";
+        string extractedDir = "C:\\User\\Desktop\\APK\\extracted\\";
+        string key = "C:\\User\\Desktop\\APK\\cert.pfx";
+        string password = "{password}";
+        string outputApk = "C:\\User\\Desktop\\APK\\signed.apk";
+        //it would be from a list from a config.txt file, but as default has only that
+        SysClG.List<string> files = new SysClG.List<string>(new string[] { "classes.dex" });
+        //would then extract the files to a folder
+        int unzipFileCount = LibAPK.ApkTool.Unzip(apk, files, extractedDir);
+        //then incorporate it back, signing it
+        int zipFileCount = LibAPK.ApkTool.ZipAndSign(apk, extractedDir, files, outputApk, key, password: password);
+        return ((zipFileCount == unzipFileCount) ? 0 : 1);
     }
 }
 #endif
