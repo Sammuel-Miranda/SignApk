@@ -25,3 +25,5 @@ So the code to make the APK sign execution would be:
     string outputApk = "C:\\Users\\User\\Desktop\\APK\\signed.apk";
     int zipFileCount = ApkTool.ZipAndSign(apk, extractedDir, files, outputApk, key);
 ```
+
+Don't know yet if this is the proper approach, since was a 5 year old code, and i don't know if "classes.dex" is all that it need, or should list all files from the apk in there (test for that is pending), but so faz the SharpZipLib required is placed on the "Namespace.ZIP.cs" file (it's an old version of it that i had modified) and the SignApk code is set on the "Namespace.APK.cs" file.
