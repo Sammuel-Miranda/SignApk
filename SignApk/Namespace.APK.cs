@@ -1,4 +1,4 @@
-//https://github.com/ibukisaar/SignApk (2021-11-08 - no licence required)
+//https://github.com/ibukisaar/SignApk (2021-11-08 - no license required)
 using Sys = global::System;
 using SysClG = global::System.Collections.Generic;
 using SysTxt = global::System.Text;
