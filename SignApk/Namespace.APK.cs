@@ -1,4 +1,4 @@
-﻿//https://github.com/ibukisaar/SignApk (2021-11-08 - no licence required)
+//https://github.com/ibukisaar/SignApk (2021-11-08 - no licence required)
 using Sys = global::System;
 using SysClG = global::System.Collections.Generic;
 using SysTxt = global::System.Text;
@@ -261,23 +261,23 @@ namespace Libs.SignApk
 
         private static void Sign(string apkFile, string inputDir, SysClG.IEnumerable<string> files, string keyFile)
         {
-			inputDir = LibAPK.Common.StandardDirectory(inputDir);
-			using (LibZIP.ZipFile zip = new LibZIP.ZipFile(new Sys.IO.FileStream(apkFile, Sys.IO.FileMode.Open, Sys.IO.FileAccess.ReadWrite, Sys.IO.FileShare.ReadWrite)))
+            inputDir = LibAPK.Common.StandardDirectory(inputDir);
+            using (LibZIP.ZipFile zip = new LibZIP.ZipFile(new Sys.IO.FileStream(apkFile, Sys.IO.FileMode.Open, Sys.IO.FileAccess.ReadWrite, Sys.IO.FileShare.ReadWrite)))
             {
-				string sfName = LibAPK.ApkTool.FindSFName(zip) ?? "SAAR";
+                string sfName = LibAPK.ApkTool.FindSFName(zip) ?? "SAAR";
                 byte[] sfData = null;
                 byte[] rsaData = null;
                 byte[] manifestData = null;
-				LibAPK.Manifest manifest = LibAPK.ApkTool.GetManifest(zip, inputDir, files, out manifestData);
-				sfData = LibAPK.ApkTool.GetSFData(zip, inputDir, files, manifest, manifestData, sfName);
-				rsaData = LibAPK.ApkTool.GetRSAData(zip, sfData, sfName, keyFile);
-				zip.BeginUpdate();
-				zip.Add(new LibAPK.StaticDataSource(manifestData), "META-INF/MANIFEST.MF");
-				zip.Add(new LibAPK.StaticDataSource(sfData), "META-INF/" + sfName + ".SF");
+                LibAPK.Manifest manifest = LibAPK.ApkTool.GetManifest(zip, inputDir, files, out manifestData);
+                sfData = LibAPK.ApkTool.GetSFData(zip, inputDir, files, manifest, manifestData, sfName);
+                rsaData = LibAPK.ApkTool.GetRSAData(zip, sfData, sfName, keyFile);
+                zip.BeginUpdate();
+                zip.Add(new LibAPK.StaticDataSource(manifestData), "META-INF/MANIFEST.MF");
+                zip.Add(new LibAPK.StaticDataSource(sfData), "META-INF/" + sfName + ".SF");
                 zip.Add(new LibAPK.StaticDataSource(rsaData), "META-INF/" + sfName + ".RSA");
-				zip.CommitUpdate();
-			}
-		}
+                zip.CommitUpdate();
+            }
+        }
 
         public static int Unzip(string apkFile, SysClG.IEnumerable<string> files, string outputDir)
         {
@@ -305,20 +305,20 @@ namespace Libs.SignApk
 
         public static int ZipAndSign(string sourceApkFile, string inputDir, SysClG.IEnumerable<string> files, string outputFile, string keyFile)
         {
-			inputDir = LibAPK.Common.StandardDirectory(inputDir);
-			bool copy = false;
+            inputDir = LibAPK.Common.StandardDirectory(inputDir);
+            bool copy = false;
             int count = 0;
-			if (Sys.IO.File.Exists(outputFile)) { using (LibZIP.ZipFile zip = new LibZIP.ZipFile(Sys.IO.File.OpenRead(outputFile))) { files = LibAPK.ApkTool.GetUpdateFilesForZip(zip, inputDir, files, out count); } }
+            if (Sys.IO.File.Exists(outputFile)) { using (LibZIP.ZipFile zip = new LibZIP.ZipFile(Sys.IO.File.OpenRead(outputFile))) { files = LibAPK.ApkTool.GetUpdateFilesForZip(zip, inputDir, files, out count); } }
             using (LibZIP.ZipFile zip = new LibZIP.ZipFile(Sys.IO.File.OpenRead(sourceApkFile)))
             {
-				if (count < zip.Count / 2)
+                if (count < zip.Count / 2)
                 {
                     long filesLengthSum = 0L;
                     foreach (string file in files) { filesLengthSum += (new Sys.IO.FileInfo(inputDir + '\\' + file)).Length; }
                     copy = (filesLengthSum < (new Sys.IO.FileInfo(sourceApkFile)).Length);
-				} else { copy = false; }
-			}
-			if (copy)
+                } else { copy = false; }
+            }
+            if (copy)
             {
                 if (count == 0) { return 0; }
                 else
@@ -351,14 +351,14 @@ namespace Libs.SignApk
                         zip.CommitUpdate();
                     }
                 }
-			}
+            }
             else
             {
                 LibAPK.ApkTool.ZipCopyToZip(sourceApkFile, inputDir, files, outputFile);
                 LibAPK.ApkTool.Sign(outputFile, inputDir, files, keyFile);
-			}
-			return count;
-		}
+            }
+            return count;
+        }
     }
 }
 #if DEBUG
@@ -366,6 +366,7 @@ internal static class Program
 {
     internal static int Main(string[] args) //https://github.com/ibukisaar/SignApk/blob/master/SignApk.Sample/MainWindow.xaml.cs
     {
+	//todo
         return 0;
     }
 }
