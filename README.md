@@ -29,3 +29,7 @@ So the code to make the APK sign execution would be:
 ```
 
 Don't know yet if this is the proper approach, since was a 5 year old code, and i don't know if "classes.dex" is all that it need, or should list all files from the apk in there (test for that is pending), but so faz the SharpZipLib required is placed on the "Namespace.ZIP.cs" file (it's an old version of it that i had modified) and the SignApk code is set on the "Namespace.APK.cs" file.
+
+#State of Development
+
+I might use the java source code for the ApkSign in "java/com/android/apksig" at googlesource.com ( https://android.googlesource.com/platform/tools/apksig/+/cb5e16ea45459c2cebfc532b45a0a185c124c34a/src/main/java/com/android/apksig?autodive=0%2F) since it's more complete - a java to c# port might do the trick
