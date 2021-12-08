@@ -1,0 +1,5 @@
+This is the APK model to be used for testing.
+
+Basically, you can extract the zip "app.target.zip" and compile on Android Studio (selecting the "unsigned" build variant set on it's graddle build commands) and you'll get the same "app.target.apk" (already here).
+
+This app has a main activity with a TextView, it basically does nothing, but has a INI file (to later be altered as well) and all the basic resources resulting in a compile APK that was supposed to run on android, if properly signed.
