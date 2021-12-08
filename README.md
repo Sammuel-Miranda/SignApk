@@ -33,3 +33,7 @@ Don't know yet if this is the proper approach, since was a 5 year old code, and 
 #State of Development
 
 I might use the java source code for the ApkSign in "java/com/android/apksig" at googlesource.com ( https://android.googlesource.com/platform/tools/apksig/+/cb5e16ea45459c2cebfc532b45a0a185c124c34a/src/main/java/com/android/apksig?autodive=0%2F) since it's more complete - a java to c# port might do the trick
+
+#Test Source
+
+The test APK is now on the "Test" folder, along a zip containing it's source code (for Android Studio compilation).
